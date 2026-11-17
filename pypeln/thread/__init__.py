@@ -44,3 +44,50 @@ from .queue import IterableQueue, OutputQueues
 from .supervisor import Supervisor
 from .utils import Namespace
 from .worker import StageParams, Worker, WorkerInfo, start_workers
+
+# ----------------------------------------------------------------
+# Lazy Parquet IO: pyarrow is only imported when the attributes below
+# are accessed, so existing code that does not use the dataset API keeps
+# working without the optional dependency installed.
+# ----------------------------------------------------------------
+
+_PARQUET_EXPORTS = frozenset(
+    {
+        "to_parquet",
+        "from_parquet",
+        "garbage_collect",
+        "normalize_partitions",
+        "WriteCoordinator",
+        "ReadCoordinator",
+        "DatasetStorage",
+        "DatasetError",
+        "PartitionBoundaryError",
+        "DatasetNotFoundError",
+        "TransactionInProgressError",
+        "io",
+    }
+)
+
+
+def __getattr__(name):
+    if name in _PARQUET_EXPORTS:
+        try:
+            import importlib
+
+            _io = importlib.import_module("pypeln.thread.io")
+        except ImportError as e:
+            raise ImportError(
+                "pypeln.thread Parquet dataset IO requires the optional "
+                "'pyarrow' dependency. Install it with "
+                "`pip install pypeln[parquet]` (or `pip install pyarrow`)."
+            ) from e
+
+        if name == "io":
+            return _io
+        return getattr(_io, name)
+
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+def __dir__():
+    return sorted(list(globals().keys()) + list(_PARQUET_EXPORTS))

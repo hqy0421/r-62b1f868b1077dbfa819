@@ -1,5 +1,30 @@
 # Changelog
 
+## [Unreleased]
+
+**Added features:**
+
+- Transactional, partitioned Parquet dataset IO for the thread pipeline:
+  - `pl.thread.to_parquet` sink: native worker threads write bounded batches
+    and roll Parquet files under a private transaction directory; a new
+    immutable version (manifest + atomic `current.json` pointer swap) is
+    published only after every worker closes its files.
+  - Append and explicit partition overwrite (empty input clears the declared
+    partitions, other partitions stay untouched); rows outside the declared
+    overwrite boundary raise `PartitionBoundaryError`. Duplicate rows,
+    declared types and `NULL` values are preserved.
+  - Failed or explicitly aborted writes keep the previous version and delete
+    all unpublished files; input is streamed with configurable
+    `workers`, `maxsize`, `rows_per_batch`, `rows_per_file` and compression,
+    never accumulated in full.
+  - `pl.thread.from_parquet` source: per-run snapshot isolation, partition
+    filters, column projection and optional schema validation; readers
+    already open keep reading their snapshot across new commits.
+  - Cross-process write lock, stale-lock reclamation and
+    `pl.thread.garbage_collect` for reclaiming old version files.
+  - Optional `pyarrow` dependency (`pip install pypeln[parquet]`), imported
+    lazily so existing calls work without it.
+
 ## [0.4.7](https://github.com/cgarciae/pypeln/tree/0.4.7) (2021-01-05)
 
 [Full Changelog](https://github.com/cgarciae/pypeln/compare/0.4.6...0.4.7)

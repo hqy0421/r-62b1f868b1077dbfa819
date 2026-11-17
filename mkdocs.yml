@@ -28,10 +28,12 @@ nav:
           filter: api/thread/filter.md
           flat_map: api/thread/flat_map.md
           from_iterable: api/thread/from_iterable.md
+          from_parquet: api/thread/from_parquet.md
           map: api/thread/map.md
           ordered: api/thread/ordered.md
           run: api/thread/run.md
           to_iterable: api/thread/to_iterable.md
+          to_parquet: api/thread/to_parquet.md
       - task:
           Overview: api/task/Overview.md
           concat: api/task/concat.md
